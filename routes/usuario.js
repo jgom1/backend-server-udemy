@@ -15,8 +15,19 @@ var Usuario = require("../models/usuario");
 // Este non necesita verificación por token.
 // ================================
 app.get("/", (req, res, next) => {
+
+  // O parámetro desde pode vir na url para poder paxinar. Se non ven ningún parámetro, usamos 0.
+  var desde = req.query.desde || 0;
+  // Casteamos o resultado para que sexa un número.
+  desde = Number(desde);
+
   // Facer select sen ningún where e obter únicamente os campos: nombre email img role.
-  Usuario.find({}, "nombre email img role").exec((err, usuarios) => {
+  // Limit permite limitar o número de elementos a devolver. Moi útil para paxinar resultados.
+  // Skip permite que se salte os valores que ten como parámetro. Ex: skip(3).limit(5) => Sáltase os primeiros 3 resultados e devolve os seguintes 5.
+  Usuario.find({}, "nombre email img role")
+  .skip(desde)
+  .limit(5)
+  .exec((err, usuarios) => {
     // Se sucede algún erro enviar un mensaxe 500.
     if (err) {
       return res.status(500).json({
@@ -25,10 +36,14 @@ app.get("/", (req, res, next) => {
         errors: err
       });
     }
-    // Se todo vai ben enviar un mensaxe 200 e os usuarios.
-    res.status(200).json({
-      ok: true,
-      usuarios: usuarios
+    // Contar o número de usuarios totais.
+    Usuario.count({}, (err, conteo)=>{
+      // Se todo vai ben enviar un mensaxe 200 e os usuarios.
+      res.status( 200 ).json( {
+        ok: true,
+        total: conteo,
+        usuarios: usuarios
+      } );
     });
   });
 });
